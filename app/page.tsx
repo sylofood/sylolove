@@ -74,18 +74,21 @@ export default function Home() {
     await loadOrders(user.uid);
   };
 
-  const markDone = async (id: string) => {
-    await updateDoc(doc(db, "orders", id), {
-      status: "done",
-    });
+  const sendOrder = async (id: string) => {
+  await updateDoc(doc(db, "orders", id), {
+    status: "sent",
+  });
 
-    if (user) await loadOrders(user.uid);
-  };
+  if (user) await loadOrders(user.uid);
+}
 
-  const removeOrder = async (id: string) => {
-    await deleteDoc(doc(db, "orders", id));
-    if (user) await loadOrders(user.uid);
-  };
+const receiveOrder = async (id: string) => {
+  await updateDoc(doc(db, "orders", id), {
+    status: "received",
+  });
+
+  if (user) await loadOrders(user.uid);
+}
 
   return (
     <main style={styles.page}>
@@ -166,7 +169,12 @@ export default function Home() {
                       style={{
                         ...styles.status,
                         background:
-                          order.status === "done" ? "#16a34a" : "#f59e0b",
+                          order.status === "sent"
+                           ? "#16a34a" 
+                           : order.status === "received"
+                           ? "#3b82f6"
+                           : "#f59e0b",
+
                       }}
                     >
                       {order.status}
@@ -175,16 +183,16 @@ export default function Home() {
                     <div style={styles.orderButtons}>
                       <button
                         style={styles.smallButton}
-                        onClick={() => markDone(order.id)}
+                        onClick={() => sendOrder(order.id)}
                       >
-                        Done
+                        Send
                       </button>
 
                       <button
                         style={styles.deleteButton}
-                        onClick={() => removeOrder(order.id)}
+                        onClick={() => receiveOrder(order.id)}
                       >
-                        Delete
+                        Receive
                       </button>
                     </div>
                   </div>
