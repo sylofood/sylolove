@@ -74,7 +74,7 @@ export default function Home() {
   storePhone: "(307) 555-1234",
 
   total: 100,
-  status: "sent",
+  status: "",
   createdAt: Date.now(),
 });
 
