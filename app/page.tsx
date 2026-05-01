@@ -27,13 +27,13 @@ const provider = new GoogleAuthProvider();
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
-  const [orders, setOrders] = useState<any[]>([]);
+  const [tokens, setTokens] = useState<any[]>([]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
-      if (u) await loadOrders(u.uid);
-      else setOrders([]);
+      if (u) await loadTokens(u.uid);
+      else setTokens([]);
     });
 
     return () => unsub();
@@ -47,7 +47,7 @@ export default function Home() {
     await signOut(auth);
   };
 
-  const loadOrders = async (uid: string) => {
+  const loadTokens = async (uid: string) => {
     const q = query(collection(db, "orders"), where("userId", "==", uid));
     const snap = await getDocs(q);
 
@@ -56,10 +56,10 @@ export default function Home() {
       ...d.data(),
     }));
 
-    setOrders(data);
+    setTokens(data);
   };
 
-  const createOrder = async () => {
+  const createDemoToken = async () => {
     if (!user) return;
 
     await addDoc(collection(db, "orders"), {
@@ -68,122 +68,152 @@ export default function Home() {
 
       storeName: "SYLO Snacks",
       storeLogo: "/sylolove.png",
-      storeAddress: "123 Main St, Rock Springs, WY",
-      storeZip: "82901",
+      storeAddress: "123 Main St, Rock Springs",
+      storeStateZip: "WY 82901",
       storePhone: "(307) 555-1234",
 
       total: 100,
-      status: "",
+      status: "active",
       createdAt: Date.now(),
     });
 
-    await loadOrders(user.uid);
+    await loadTokens(user.uid);
   };
 
-  const sendOrder = async (id: string) => {
+  const sendToken = async (id: string) => {
     await updateDoc(doc(db, "orders", id), {
       status: "sent",
     });
 
-    if (user) await loadOrders(user.uid);
+    if (user) await loadTokens(user.uid);
   };
 
-  const receiveOrder = async (id: string) => {
+  const receiveToken = async (id: string) => {
     await updateDoc(doc(db, "orders", id), {
       status: "received",
     });
 
-    if (user) await loadOrders(user.uid);
+    if (user) await loadTokens(user.uid);
   };
+
+  const totalBalance = tokens.reduce(
+    (sum, token) => sum + Number(token.total || 0),
+    0
+  );
 
   return (
     <main style={styles.page}>
       <section style={styles.card}>
         <div style={styles.logoBox}>
           <img src="/sylolove.png" alt="SYLO" style={styles.appLogo} />
-          <div style={styles.badge}>Wallet App</div>
+          <div style={styles.badge}>SYLO Wallet</div>
         </div>
 
         {!user ? (
           <>
             <h1 style={styles.title}>Welcome to SYLO</h1>
             <p style={styles.subtitle}>
-              Secure login, live orders, and Firebase powered data.
+              Hold, send, and receive gift tokens from your favorite local
+              businesses.
             </p>
 
             <button style={styles.primaryButton} onClick={login}>
-              🔥 Login with Google
+              Login with Google
             </button>
           </>
         ) : (
           <>
             <div style={styles.profile}>
               <img
-                src={user.photoURL || ""}
+                src={user.photoURL || "/sylolove.png"}
                 alt="profile"
                 style={styles.avatar}
               />
 
-              <div>
+              <div style={{ minWidth: 0 }}>
                 <h2 style={styles.name}>{user.displayName}</h2>
                 <p style={styles.email}>{user.email}</p>
               </div>
             </div>
 
-            <div style={styles.actions}>
-              <button style={styles.primaryButton} onClick={createOrder}>
-                + Create Order
-              </button>
+            <div style={styles.balanceCard}>
+              <div>
+                <div style={styles.balanceLabel}>Wallet Balance</div>
+                <div style={styles.balanceAmount}>
+                  ${totalBalance.toFixed(2)}
+                </div>
+              </div>
 
+              <div style={styles.balanceBadge}>SYLO</div>
+            </div>
+
+            <div style={styles.topActions}>
               <button style={styles.logoutButton} onClick={logout}>
                 Logout
               </button>
+
+              <button style={styles.demoButton} onClick={createDemoToken}>
+                Add Demo Token
+              </button>
             </div>
 
-            <h3 style={styles.sectionTitle}>Your Orders</h3>
+            <h3 style={styles.sectionTitle}>My Gift Tokens</h3>
 
-            {orders.length === 0 ? (
-              <div style={styles.empty}>No orders yet.</div>
+            {tokens.length === 0 ? (
+              <div style={styles.empty}>
+                No gift tokens yet.
+                <br />
+                Tap “Add Demo Token” to test.
+              </div>
             ) : (
-              <div style={styles.orderList}>
-                {orders.map((order) => (
-                  <div key={order.id} style={styles.orderCard}>
-                    <div style={styles.orderTop}>
+              <div style={styles.tokenList}>
+                {tokens.map((token) => (
+                  <div key={token.id} style={styles.tokenCard}>
+                    <div style={styles.tokenTop}>
                       <img
-                        src={order.storeLogo || "/sylolove.png"}
-                        alt="store"
+                        src={token.storeLogo || "/sylolove.png"}
+                        alt="token"
                         style={styles.storeLogo}
                       />
 
-                      <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={styles.tokenInfo}>
                         <div style={styles.storeName}>
-                          {order.storeName || "SYLO Snacks"}
+                          {token.storeName || "Gift Token"}
                         </div>
 
-                        <div style={styles.orderInfo}>
-                          📍 {order.storeAddress || "123 Main St, Rock Springs, WY"}{" "}
-                          {order.storeZip || "82901"}
+                        <div style={styles.addressLine}>
+                          📍 {token.storeAddress || "123 Main St, Rock Springs"}
                         </div>
 
-                        <div style={styles.orderInfo}>
-                          📞 {order.storePhone || "(307) 555-1234"}
+                        <div style={styles.addressLine}>
+                          {token.storeStateZip || token.storeZip || "WY 82901"}
+                        </div>
+
+                        <div style={styles.phoneLine}>
+                          📞 {token.storePhone || "(307) 555-1234"}
                         </div>
                       </div>
 
-                      <div style={styles.orderAmount}>${order.total}</div>
+                      <div style={styles.tokenAmount}>
+                        ${Number(token.total || 0).toFixed(2)}
+                      </div>
                     </div>
 
-                    <div style={styles.orderButtons}>
+                    <div style={styles.tokenStatus}>
+                      Status: {token.status || "active"}
+                    </div>
+
+                    <div style={styles.tokenButtons}>
                       <button
-                        style={styles.smallButton}
-                        onClick={() => sendOrder(order.id)}
+                        style={styles.sendButton}
+                        onClick={() => sendToken(token.id)}
                       >
                         Send
                       </button>
 
                       <button
                         style={styles.receiveButton}
-                        onClick={() => receiveOrder(order.id)}
+                        onClick={() => receiveToken(token.id)}
                       >
                         Receive
                       </button>
@@ -211,6 +241,7 @@ const styles: any = {
     padding: 20,
     fontFamily: "Arial, sans-serif",
   },
+
   card: {
     width: "100%",
     maxWidth: 430,
@@ -221,34 +252,112 @@ const styles: any = {
     boxShadow: "0 20px 60px rgba(0,0,0,0.45)",
     backdropFilter: "blur(18px)",
   },
+
   logoBox: {
     textAlign: "center",
-    marginBottom: 28,
+    marginBottom: 26,
   },
+
   appLogo: {
-    width: 120,
-    height: 120,
+    width: 118,
+    height: 118,
     borderRadius: "50%",
     display: "block",
     margin: "0 auto 10px",
     boxShadow: "0 0 30px rgba(0,150,255,0.7)",
   },
+
   badge: {
     marginTop: 6,
-    color: "#d1d5db",
-    fontSize: 14,
+    color: "#e5e7eb",
+    fontSize: 17,
+    fontWeight: 700,
   },
+
   title: {
     fontSize: 32,
     marginBottom: 10,
     textAlign: "center",
   },
+
   subtitle: {
     color: "#d1d5db",
     textAlign: "center",
     lineHeight: 1.5,
     marginBottom: 28,
   },
+
+  profile: {
+    display: "flex",
+    alignItems: "center",
+    gap: 14,
+    marginBottom: 22,
+  },
+
+  avatar: {
+    width: 64,
+    height: 64,
+    borderRadius: "50%",
+    border: "3px solid #facc15",
+    objectFit: "cover",
+  },
+
+  name: {
+    margin: 0,
+    fontSize: 22,
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
+
+  email: {
+    margin: "5px 0 0",
+    color: "#d1d5db",
+    fontSize: 14,
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
+
+  balanceCard: {
+    padding: 20,
+    borderRadius: 20,
+    background: "rgba(255,255,255,0.08)",
+    border: "1px solid rgba(255,255,255,0.12)",
+    marginBottom: 16,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  balanceLabel: {
+    color: "#d1d5db",
+    fontSize: 14,
+    marginBottom: 6,
+  },
+
+  balanceAmount: {
+    fontSize: 36,
+    fontWeight: 900,
+    color: "white",
+  },
+
+  balanceBadge: {
+    padding: "10px 14px",
+    borderRadius: 14,
+    background: "rgba(250,204,21,0.12)",
+    border: "1px solid rgba(250,204,21,0.25)",
+    color: "#facc15",
+    fontWeight: 900,
+  },
+
+  topActions: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 12,
+    marginBottom: 24,
+  },
+
   primaryButton: {
     width: "100%",
     padding: "15px 18px",
@@ -260,9 +369,10 @@ const styles: any = {
     fontSize: 16,
     cursor: "pointer",
   },
+
   logoutButton: {
     width: "100%",
-    padding: "14px 18px",
+    padding: "13px 14px",
     borderRadius: 16,
     border: "1px solid rgba(255,255,255,0.2)",
     background: "rgba(255,255,255,0.08)",
@@ -270,109 +380,125 @@ const styles: any = {
     fontWeight: 700,
     cursor: "pointer",
   },
-  profile: {
-    display: "flex",
-    alignItems: "center",
-    gap: 14,
-    marginBottom: 22,
+
+  demoButton: {
+    width: "100%",
+    padding: "13px 14px",
+    borderRadius: 16,
+    border: "none",
+    background: "linear-gradient(135deg, #f97316, #facc15)",
+    color: "#111827",
+    fontWeight: 800,
+    cursor: "pointer",
   },
-  avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: "50%",
-    border: "3px solid #facc15",
-  },
-  name: {
-    margin: 0,
-    fontSize: 22,
-  },
-  email: {
-    margin: "5px 0 0",
-    color: "#d1d5db",
-    fontSize: 14,
-  },
-  actions: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: 12,
-    marginBottom: 28,
-  },
+
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 22,
     marginBottom: 14,
+    fontWeight: 900,
   },
+
   empty: {
     padding: 20,
     textAlign: "center",
     color: "#d1d5db",
     border: "1px dashed rgba(255,255,255,0.2)",
     borderRadius: 16,
+    lineHeight: 1.5,
   },
-  orderList: {
+
+  tokenList: {
     display: "flex",
     flexDirection: "column",
     gap: 14,
   },
-  orderCard: {
+
+  tokenCard: {
     padding: 16,
-    borderRadius: 16,
-    background: "rgba(255,255,255,0.06)",
-    border: "1px solid rgba(255,255,255,0.12)",
-    marginBottom: 12,
+    borderRadius: 18,
+    background: "rgba(255,255,255,0.07)",
+    border: "1px solid rgba(255,255,255,0.13)",
   },
-  orderTop: {
+
+  tokenTop: {
     display: "flex",
-    alignItems: "center",
-    marginBottom: 10,
+    alignItems: "flex-start",
     gap: 12,
   },
+
   storeLogo: {
-    width: 60,
-    height: 60,
-    borderRadius: 12,
+    width: 62,
+    height: 62,
+    borderRadius: 14,
     objectFit: "cover",
+    flexShrink: 0,
   },
+
+  tokenInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+
   storeName: {
-    fontSize: 15,
-    fontWeight: 800,
+    fontSize: 16,
+    fontWeight: 900,
     color: "white",
-    marginBottom: 4,
+    marginBottom: 6,
   },
-  orderInfo: {
+
+  addressLine: {
     color: "#d1d5db",
-    fontSize: 12,
-    marginTop: 3,
+    fontSize: 13,
     lineHeight: 1.35,
+    marginTop: 2,
   },
-  orderAmount: {
+
+  phoneLine: {
+    color: "#9ca3af",
+    fontSize: 12,
+    marginTop: 6,
+  },
+
+  tokenAmount: {
     fontSize: 20,
     fontWeight: 900,
-    color: "#facc15",
+    color: "#4ade80",
     whiteSpace: "nowrap",
+    textAlign: "right",
   },
-  orderButtons: {
+
+  tokenStatus: {
+    marginTop: 12,
+    color: "#9ca3af",
+    fontSize: 12,
+    textTransform: "capitalize",
+  },
+
+  tokenButtons: {
     display: "flex",
     gap: 10,
     marginTop: 14,
   },
-  smallButton: {
+
+  sendButton: {
     flex: 1,
-    padding: 10,
-    borderRadius: 12,
+    padding: 11,
+    borderRadius: 13,
     border: "none",
     background: "#2563eb",
     color: "white",
-    fontWeight: 700,
+    fontWeight: 800,
     cursor: "pointer",
   },
+
   receiveButton: {
     flex: 1,
-    padding: 10,
-    borderRadius: 12,
+    padding: 11,
+    borderRadius: 13,
     border: "none",
     background: "#16a34a",
     color: "white",
-    fontWeight: 700,
+    fontWeight: 800,
     cursor: "pointer",
   },
 };
