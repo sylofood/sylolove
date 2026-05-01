@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import app, { db } from "./lid/firebase";
+import app, { db } from "./lib/firebase";
 
 import {
   getAuth,
@@ -14,34 +14,23 @@ import {
 } from "firebase/auth";
 
 import {
-  addDoc,
   collection,
-  doc,
   getDocs,
-  query,
-  updateDoc,
-  where,
 } from "firebase/firestore";
 
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
-const TEST_PHONE = "2258888999";
-
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [tokens, setTokens] = useState<any[]>([]);
 
-  // ✅ FIX LOGIN iPHONE (redirect)
   useEffect(() => {
-    getRedirectResult(auth).catch((error) => {
-      console.error(error);
-      alert(error.message);
-    });
+    getRedirectResult(auth).catch(console.error);
 
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
-      if (u) await loadTokens(u.uid);
+      if (u) loadTokens();
       else setTokens([]);
     });
 
@@ -56,123 +45,88 @@ export default function Home() {
     await signOut(auth);
   };
 
-  const loadTokens = async (uid: string) => {
-    const q = query(collection(db, "orders"), where("userId", "==", uid));
-    const snap = await getDocs(q);
-
-    const data = snap.docs.map((d) => ({
-      id: d.id,
-      ...d.data(),
+  const loadTokens = async () => {
+    const snap = await getDocs(collection(db, "orders"));
+    const data = snap.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
     }));
-
     setTokens(data);
   };
 
-  const addGiftToken = async () => {
-    if (!user) return;
+  if (!user) {
+    return (
+      <main style={styles.page}>
+        <div style={styles.container}>
+          <div style={styles.loginCard}>
+            <img src="/sylolove.png" style={styles.logo} />
 
-    await addDoc(collection(db, "orders"), {
-      userId: user.uid,
-      email: user.email,
-      storeName: "SYLO Snacks",
-      storeLogo: "/sylolove.png",
-      storeAddress: "123 Main St",
-      storeCity: "Rock Springs",
-      storeState: "WY",
-      storeZip: "82901",
-      storePhone: TEST_PHONE,
-      total: 100,
-      status: "active",
-      createdAt: Date.now(),
-    });
-
-    await loadTokens(user.uid);
-  };
-
-  const sendToken = async (id: string) => {
-    await updateDoc(doc(db, "orders", id), {
-      status: "sent",
-    });
-
-    if (user) await loadTokens(user.uid);
-  };
-
-  const receiveToken = async (id: string) => {
-    await updateDoc(doc(db, "orders", id), {
-      status: "received",
-    });
-
-    if (user) await loadTokens(user.uid);
-  };
-
-  const totalBalance = tokens.reduce(
-    (sum, token) => sum + Number(token.total || 0),
-    0
-  );
-
-  return (
-    <main style={styles.page}>
-      <section style={styles.card}>
-        <div style={styles.logoBox}>
-          <img src="/sylolove.png" alt="SYLO" style={styles.appLogo} />
-          <div style={styles.badge}>SYLO Wallet</div>
-        </div>
-
-        {!user ? (
-          <>
-            <h1 style={styles.title}>Welcome to SYLO</h1>
+            <h2>SYLO Wallet</h2>
+            <p>Welcome to SYLO</p>
 
             <button style={styles.primaryButton} onClick={login}>
               Login with Google
             </button>
-          </>
-        ) : (
-          <>
-            <div style={styles.profile}>
-              <img
-                src={user.photoURL || "/sylolove.png"}
-                alt="profile"
-                style={styles.avatar}
-              />
+          </div>
+        </div>
+      </main>
+    );
+  }
 
-              <div>
-                <h2>{user.displayName}</h2>
-                <p>{user.email}</p>
-              </div>
-            </div>
+  return (
+    <main style={styles.page}>
+      <div style={styles.container}>
+        <div style={styles.topBar}>
+          <button style={styles.logout} onClick={logout}>
+            Logout
+          </button>
 
-            <div style={styles.balanceCard}>
-              <div>
-                <div>Wallet Balance</div>
-                <div style={styles.balanceAmount}>
-                  ${totalBalance.toFixed(2)}
+          <button style={styles.addButton}>
+            Add Gift Token
+          </button>
+        </div>
+
+        <h2 style={{ marginTop: 10 }}>My Gift Tokens</h2>
+
+        {tokens.map((t) => (
+          <div key={t.id} style={styles.card}>
+            <div style={styles.row}>
+              <img src="/sylolove.png" style={styles.cardLogo} />
+
+              <div style={{ flex: 1 }}>
+                <div style={styles.storeName}>
+                  {t.storeName || "SYLO Snacks"}
                 </div>
-              </div>
-            </div>
 
-            <button style={styles.addButton} onClick={addGiftToken}>
-              Add Gift Token
-            </button>
+                <div style={styles.address}>
+                  📍 {t.address || "123 Main St"}
+                </div>
 
-            <button style={styles.logoutButton} onClick={logout}>
-              Logout
-            </button>
+                <div style={styles.address}>
+                  Rock Springs, WY
+                </div>
 
-            {tokens.map((t) => (
-              <div key={t.id} style={styles.token}>
-                <div>{t.storeName}</div>
-                <div>${t.total}</div>
-                <div>Status: {t.status}</div>
+                <div style={styles.phone}>
+                  📞 2258888999
+                </div>
 
-                <button onClick={() => sendToken(t.id)}>Send</button>
-                <button onClick={() => receiveToken(t.id)}>
-                  Receive
+                <button style={styles.mapButton}>
+                  Open Map
                 </button>
               </div>
-            ))}
-          </>
-        )}
-      </section>
+
+              <div style={styles.amount}>
+                ${t.total || 100}
+              </div>
+            </div>
+
+            <div style={styles.buttons}>
+              <button style={styles.send}>Send</button>
+              <button style={styles.receive}>Receive</button>
+            </div>
+          </div>
+        ))}
+      </div>
     </main>
   );
 }
@@ -182,16 +136,24 @@ const styles: any = {
     minHeight: "100vh",
     background: "#000",
     color: "white",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
+    padding: 16,
   },
 
-  card: {
-    width: 350,
-    padding: 20,
+  container: {
+    maxWidth: 500,
+    margin: "0 auto",
+  },
+
+  loginCard: {
     background: "#111",
+    padding: 20,
     borderRadius: 20,
+    textAlign: "center",
+  },
+
+  logo: {
+    width: 120,
+    marginBottom: 10,
   },
 
   primaryButton: {
@@ -201,60 +163,98 @@ const styles: any = {
     border: "none",
     borderRadius: 10,
     fontWeight: "bold",
+    marginTop: 10,
+  },
+
+  topBar: {
+    display: "flex",
+    justifyContent: "space-between",
+  },
+
+  logout: {
+    padding: 10,
+    borderRadius: 10,
+    border: "1px solid #555",
+    background: "transparent",
+    color: "white",
   },
 
   addButton: {
-    marginTop: 10,
-    padding: 12,
-    width: "100%",
-    background: "orange",
-  },
-
-  logoutButton: {
-    marginTop: 10,
-  },
-
-  token: {
-    marginTop: 10,
-    background: "#222",
     padding: 10,
+    borderRadius: 10,
+    background: "orange",
+    border: "none",
   },
 
-  balanceCard: {
+  card: {
+    marginTop: 15,
+    padding: 16,
+    background: "#111",
+    borderRadius: 20,
+  },
+
+  row: {
+    display: "flex",
+    gap: 10,
+  },
+
+  cardLogo: {
+    width: 60,
+    height: 60,
+  },
+
+  storeName: {
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+
+  address: {
+    fontSize: 13,
+    color: "#ccc",
+  },
+
+  phone: {
+    fontSize: 13,
+    color: "#4ade80",
+  },
+
+  mapButton: {
+    marginTop: 5,
+    padding: 6,
+    background: "#14532d",
+    border: "none",
+    borderRadius: 10,
+    color: "white",
+  },
+
+  amount: {
+    color: "#4ade80",
+    fontWeight: "bold",
+    fontSize: 18,
+  },
+
+  buttons: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 10,
     marginTop: 10,
   },
 
-  balanceAmount: {
-    fontSize: 28,
+  send: {
+    padding: 12,
+    background: "#2563eb",
+    border: "none",
+    borderRadius: 10,
+    color: "white",
     fontWeight: "bold",
   },
 
-  profile: {
-    display: "flex",
-    gap: 10,
-    alignItems: "center",
-  },
-
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: "50%",
-  },
-
-  logoBox: {
-    textAlign: "center",
-  },
-
-  appLogo: {
-    width: 100,
-    borderRadius: "50%",
-  },
-
-  badge: {
-    marginTop: 5,
-  },
-
-  title: {
-    textAlign: "center",
+  receive: {
+    padding: 12,
+    background: "#16a34a",
+    border: "none",
+    borderRadius: 10,
+    color: "white",
+    fontWeight: "bold",
   },
 };
