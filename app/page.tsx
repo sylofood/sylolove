@@ -139,10 +139,28 @@ export default function Home() {
               <div style={styles.orderList}>
                 {orders.map((order) => (
                   <div key={order.id} style={styles.orderCard}>
-                    <div>
-                      <p style={styles.orderTotal}>${order.total}</p>
-                      <p style={styles.orderEmail}>{order.email}</p>
-                    </div>
+                    
+                    <div style={styles.orderTop}>
+  <img
+    src={order.storeLogo || "/sylolove.png"}
+    alt="store"
+    style={styles.storeLogo}
+  />
+
+  <div style={{ flex: 1 }}>
+    <div style={styles.storeName}>
+      {order.storeName || "SYLO Snacks"}
+    </div>
+
+    <div style={styles.orderEmail}>
+      {order.email}
+    </div>
+  </div>
+
+  <div style={styles.orderAmount}>
+    ${order.total}
+  </div>
+</div>
 
                     <span
                       style={{
@@ -205,6 +223,14 @@ const styles: any = {
   logoBox: {
     textAlign: "center",
     marginBottom: 28,
+  },
+  appLogo: {
+  width: 120,
+  height: 120,
+  borderRadius: "50%",
+  display: "block",
+  margin: "0 auto 10px",
+  boxShadow: "0 0 30px rgba(0,150,255,0.7)",
   },
   logo: {
     fontSize: 34,
