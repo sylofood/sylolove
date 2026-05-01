@@ -91,7 +91,7 @@ export default function Home() {
     <main style={styles.page}>
       <section style={styles.card}>
         <div style={styles.logoBox}>
-          <div style={styles.logo}>SYLO</div>
+         <img src="/sylolove.png" alt="SYLO" style={styles.appLogo} />
           <div style={styles.badge}>Wallet App</div>
         </div>
 
