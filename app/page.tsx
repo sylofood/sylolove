@@ -238,6 +238,18 @@ const styles: any = {
     letterSpacing: 4,
     color: "#facc15",
   },
+  storeLogo: {
+  width: 60,
+  height: 60,
+  borderRadius: 12,
+  objectFit: "cover",
+  marginRight: 12,
+  },
+  orderTop: {
+  display: "flex",
+  alignItems: "center",
+  marginBottom: 10,
+  },
   badge: {
     marginTop: 6,
     color: "#d1d5db",
