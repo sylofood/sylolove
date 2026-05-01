@@ -15,7 +15,6 @@ import {
 import {
   addDoc,
   collection,
-  deleteDoc,
   doc,
   getDocs,
   query,
@@ -61,47 +60,47 @@ export default function Home() {
   };
 
   const createOrder = async () => {
-  if (!user) return;
+    if (!user) return;
 
- await addDoc(collection(db, "orders"), {
-  userId: user.uid,
-  email: user.email,
+    await addDoc(collection(db, "orders"), {
+      userId: user.uid,
+      email: user.email,
 
-  storeName: "SYLO Snacks",
-  storeLogo: "/sylolove.png",
-  storeAddress: "123 Main St, Rock Springs, WY",
-  storeZip: "82901", // 👈 thêm dòng này
-  storePhone: "(307) 555-1234",
+      storeName: "SYLO Snacks",
+      storeLogo: "/sylolove.png",
+      storeAddress: "123 Main St, Rock Springs, WY",
+      storeZip: "82901",
+      storePhone: "(307) 555-1234",
 
-  total: 100,
-  status: "",
-  createdAt: Date.now(),
-});
+      total: 100,
+      status: "",
+      createdAt: Date.now(),
+    });
 
-  await loadOrders(user.uid);
-};
+    await loadOrders(user.uid);
+  };
 
   const sendOrder = async (id: string) => {
-  await updateDoc(doc(db, "orders", id), {
-    status: "sent",
-  });
+    await updateDoc(doc(db, "orders", id), {
+      status: "sent",
+    });
 
-  if (user) await loadOrders(user.uid);
-}
+    if (user) await loadOrders(user.uid);
+  };
 
-const receiveOrder = async (id: string) => {
-  await updateDoc(doc(db, "orders", id), {
-    status: "received",
-  });
+  const receiveOrder = async (id: string) => {
+    await updateDoc(doc(db, "orders", id), {
+      status: "received",
+    });
 
-  if (user) await loadOrders(user.uid);
-}
+    if (user) await loadOrders(user.uid);
+  };
 
   return (
     <main style={styles.page}>
       <section style={styles.card}>
         <div style={styles.logoBox}>
-         <img src="/sylolove.png" alt="SYLO" style={styles.appLogo} />
+          <img src="/sylolove.png" alt="SYLO" style={styles.appLogo} />
           <div style={styles.badge}>Wallet App</div>
         </div>
 
@@ -149,30 +148,30 @@ const receiveOrder = async (id: string) => {
               <div style={styles.orderList}>
                 {orders.map((order) => (
                   <div key={order.id} style={styles.orderCard}>
-                    
                     <div style={styles.orderTop}>
-  <img
-    src={order.storeLogo || "/sylolove.png"}
-    alt="store"
-    style={styles.storeLogo}
-  />
+                      <img
+                        src={order.storeLogo || "/sylolove.png"}
+                        alt="store"
+                        style={styles.storeLogo}
+                      />
 
-  <div style={{ flex: 1 }}>
-    <div style={styles.storeName}>
-      {order.storeName || "SYLO Snacks"}
-    </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={styles.storeName}>
+                          {order.storeName || "SYLO Snacks"}
+                        </div>
 
-    <div style={styles.orderEmail}>
-      {order.email}
-    </div>
-  </div>
+                        <div style={styles.orderInfo}>
+                          📍 {order.storeAddress || "123 Main St, Rock Springs, WY"}{" "}
+                          {order.storeZip || "82901"}
+                        </div>
 
-  <div style={styles.orderAmount}>
-    ${order.total}
-  </div>
-</div>
+                        <div style={styles.orderInfo}>
+                          📞 {order.storePhone || "(307) 555-1234"}
+                        </div>
+                      </div>
 
-                    
+                      <div style={styles.orderAmount}>${order.total}</div>
+                    </div>
 
                     <div style={styles.orderButtons}>
                       <button
@@ -183,7 +182,7 @@ const receiveOrder = async (id: string) => {
                       </button>
 
                       <button
-                        style={styles.deleteButton}
+                        style={styles.receiveButton}
                         onClick={() => receiveOrder(order.id)}
                       >
                         Receive
@@ -227,30 +226,12 @@ const styles: any = {
     marginBottom: 28,
   },
   appLogo: {
-  width: 120,
-  height: 120,
-  borderRadius: "50%",
-  display: "block",
-  margin: "0 auto 10px",
-  boxShadow: "0 0 30px rgba(0,150,255,0.7)",
-  },
-  logo: {
-    fontSize: 34,
-    fontWeight: 900,
-    letterSpacing: 4,
-    color: "#facc15",
-  },
-  storeLogo: {
-  width: 60,
-  height: 60,
-  borderRadius: 12,
-  objectFit: "cover",
-  marginRight: 12,
-  },
-  orderTop: {
-  display: "flex",
-  alignItems: "center",
-  marginBottom: 10,
+    width: 120,
+    height: 120,
+    borderRadius: "50%",
+    display: "block",
+    margin: "0 auto 10px",
+    boxShadow: "0 0 30px rgba(0,150,255,0.7)",
   },
   badge: {
     marginTop: 6,
@@ -333,31 +314,41 @@ const styles: any = {
     gap: 14,
   },
   orderCard: {
-    background: "rgba(255,255,255,0.1)",
-    border: "1px solid rgba(255,255,255,0.15)",
-    borderRadius: 18,
     padding: 16,
+    borderRadius: 16,
+    background: "rgba(255,255,255,0.06)",
+    border: "1px solid rgba(255,255,255,0.12)",
+    marginBottom: 12,
   },
-  orderTotal: {
-    fontSize: 26,
-    fontWeight: 900,
-    margin: 0,
-    color: "#facc15",
+  orderTop: {
+    display: "flex",
+    alignItems: "center",
+    marginBottom: 10,
+    gap: 12,
   },
-  orderEmail: {
-    color: "#d1d5db",
-    fontSize: 13,
-    marginTop: 4,
+  storeLogo: {
+    width: 60,
+    height: 60,
+    borderRadius: 12,
+    objectFit: "cover",
   },
-  status: {
-    display: "inline-block",
-    padding: "6px 12px",
-    borderRadius: 999,
-    marginTop: 10,
-    fontSize: 12,
+  storeName: {
+    fontSize: 15,
     fontWeight: 800,
     color: "white",
-    textTransform: "uppercase",
+    marginBottom: 4,
+  },
+  orderInfo: {
+    color: "#d1d5db",
+    fontSize: 12,
+    marginTop: 3,
+    lineHeight: 1.35,
+  },
+  orderAmount: {
+    fontSize: 20,
+    fontWeight: 900,
+    color: "#facc15",
+    whiteSpace: "nowrap",
   },
   orderButtons: {
     display: "flex",
@@ -374,12 +365,12 @@ const styles: any = {
     fontWeight: 700,
     cursor: "pointer",
   },
-  deleteButton: {
+  receiveButton: {
     flex: 1,
     padding: 10,
     borderRadius: 12,
     border: "none",
-    background: "#dc2626",
+    background: "#16a34a",
     color: "white",
     fontWeight: 700,
     cursor: "pointer",
