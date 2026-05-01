@@ -67,7 +67,7 @@ export default function Home() {
       userId: user.uid,
       email: user.email,
       total: 100,
-      status: "pending",
+      status: "sent",
       createdAt: Date.now(),
     });
 
@@ -173,7 +173,7 @@ const receiveOrder = async (id: string) => {
                            ? "#16a34a" 
                            : order.status === "received"
                            ? "#3b82f6"
-                           : "#f59e0b",
+                           : "#ccc",
 
                       }}
                     >
