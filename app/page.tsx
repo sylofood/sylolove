@@ -61,18 +61,25 @@ export default function Home() {
   };
 
   const createOrder = async () => {
-    if (!user) return;
+  if (!user) return;
 
-    await addDoc(collection(db, "orders"), {
-      userId: user.uid,
-      email: user.email,
-      total: 100,
-      status: "sent",
-      createdAt: Date.now(),
-    });
+ await addDoc(collection(db, "orders"), {
+  userId: user.uid,
+  email: user.email,
 
-    await loadOrders(user.uid);
-  };
+  storeName: "SYLO Snacks",
+  storeLogo: "/sylolove.png",
+  storeAddress: "123 Main St, Rock Springs, WY",
+  storeZip: "82901", // 👈 thêm dòng này
+  storePhone: "(307) 555-1234",
+
+  total: 100,
+  status: "sent",
+  createdAt: Date.now(),
+});
+
+  await loadOrders(user.uid);
+};
 
   const sendOrder = async (id: string) => {
   await updateDoc(doc(db, "orders", id), {
