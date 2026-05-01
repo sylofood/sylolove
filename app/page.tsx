@@ -165,20 +165,7 @@ const receiveOrder = async (id: string) => {
   </div>
 </div>
 
-                    <span
-                      style={{
-                        ...styles.status,
-                        background:
-                          order.status === "sent"
-                           ? "#16a34a" 
-                           : order.status === "received"
-                           ? "#3b82f6"
-                           : "#ccc",
-
-                      }}
-                    >
-                      {order.status}
-                    </span>
+                    
 
                     <div style={styles.orderButtons}>
                       <button
